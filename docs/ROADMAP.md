@@ -20,17 +20,18 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
   Modrinth-Manifest erzeugen, Mods hinzufügen, Workspace auflisten.
 - Tests für Werkzeuge, Wissenssuche und Backends.
 
-## Phase 2 — Mehr Wissen & Inhalte 🔜
-- Wissensdatenbank ausbauen: Fabric-API-Referenzen, Beispiel-Snippets (Item, Block,
-  BlockEntity, Entity, Rezept, Loot-Table), häufige Crash-Ursachen.
-- **Wissen aus echten Mods & Videos (als Text!):** Werkzeug, das öffentlichen
-  Mod-Quellcode (GitHub) und **Video-Transkripte/Untertitel** einliest und in die
-  Wissensdatenbank aufnimmt. So lernt Stevi aus Tutorials — ohne die Videos
-  pixelweise „anzuschauen" (das wäre teuer und schlechter).
-- Werkzeug „Item/Block hinzufügen“: erzeugt automatisch Java-Registrierung +
+## Phase 2 — Mehr Wissen & Inhalte 🔄 (in Arbeit)
+- ✅ **Wissens-Importer:** `stevi import mod <ordner|git-url>` und
+  `stevi import transcript <datei>` nehmen echten Mod-Quellcode und
+  Video-Transkripte (als Text!) in die Wissensdatenbank auf. So lernt Stevi aus
+  Tutorials — ohne die Videos pixelweise „anzuschauen" (das wäre teuer und
+  schlechter). Importiertes Wissen wird automatisch mitgeladen.
+- 🔜 Kuratierte Wissensdatenbank ausbauen: Fabric-API-Referenzen, Beispiel-Snippets
+  (Item, Block, BlockEntity, Entity, Rezept, Loot-Table), häufige Crash-Ursachen.
+- 🔜 Werkzeug „Item/Block hinzufügen": erzeugt automatisch Java-Registrierung +
   Modell-/Blockstate-/Lang-JSON + Platzhalter-Textur.
-- Forge/NeoForge-Unterstützung als Option.
-- Versionsnummern automatisch von fabricmc.net beziehen (statt fester Defaults).
+- 🔜 Forge/NeoForge-Unterstützung als Option.
+- 🔜 Versionsnummern automatisch von fabricmc.net beziehen (statt fester Defaults).
 
 ## Phase 3 — Echtes Bauen & Selbstkorrektur
 - Werkzeug `build_mod`: führt `./gradlew build` aus und gibt das Ergebnis zurück.

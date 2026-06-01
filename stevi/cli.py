@@ -97,6 +97,7 @@ def main() -> None:
     Unterbefehle:
       stevi          → interaktiver Terminal-Chat
       stevi web      → startet das Web-Chat-Terminal (Browser)
+      stevi import   → Wissen importieren (Mod-Code / Video-Transkripte)
     """
     args = sys.argv[1:]
     if args and args[0] == "web":
@@ -105,6 +106,10 @@ def main() -> None:
         host = args[1] if len(args) > 1 else "127.0.0.1"
         port = int(args[2]) if len(args) > 2 else 8000
         raise SystemExit(run_web(host=host, port=port))
+    if args and args[0] == "import":
+        from .knowledge_import import run_import_cli
+
+        raise SystemExit(run_import_cli(args[1:]))
     raise SystemExit(run_chat())
 
 

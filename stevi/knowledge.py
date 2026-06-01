@@ -70,19 +70,31 @@ def _split_into_sections(source: str, content: str) -> list[Section]:
 
 
 class KnowledgeBase:
-    """Lädt und durchsucht die Markdown-Wissensbasis."""
+    """Lädt und durchsucht die Markdown-Wissensbasis.
 
-    def __init__(self, directory: Path = KNOWLEDGE_DIR) -> None:
-        self.directory = directory
+    Lädt immer die mitgelieferte (kuratierte) Wissensbasis und zusätzlich beliebige
+    ``extra_dirs`` — z.B. das Verzeichnis mit importiertem Wissen (Mod-Code,
+    Video-Transkripte). So wächst Stevis Wissen, ohne dass etwas neu trainiert wird.
+    """
+
+    def __init__(
+        self,
+        directory: Path = KNOWLEDGE_DIR,
+        extra_dirs: list[Path] | None = None,
+    ) -> None:
+        self.directories: list[Path] = [directory]
+        if extra_dirs:
+            self.directories.extend(extra_dirs)
         self.sections: list[Section] = []
         self._load()
 
     def _load(self) -> None:
-        if not self.directory.is_dir():
-            return
-        for path in sorted(self.directory.glob("*.md")):
-            content = path.read_text(encoding="utf-8")
-            self.sections.extend(_split_into_sections(path.name, content))
+        for directory in self.directories:
+            if not directory or not Path(directory).is_dir():
+                continue
+            for path in sorted(Path(directory).glob("*.md")):
+                content = path.read_text(encoding="utf-8")
+                self.sections.extend(_split_into_sections(path.name, content))
 
     def search(self, query: str, top_k: int = 3) -> list[Section]:
         """Gibt die ``top_k`` relevantesten Abschnitte zur Frage zurück."""

@@ -41,6 +41,7 @@ class Config:
     ollama_host: str
     ollama_model: str
     workspace: Path
+    knowledge_dir: Path        # eigenes/erweitertes Wissen (Importe)
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -52,6 +53,9 @@ class Config:
             backend = "claude" if api_key else "ollama"
 
         workspace = Path(os.environ.get("STEVI_WORKSPACE", "./workspace")).resolve()
+        knowledge_dir = Path(
+            os.environ.get("STEVI_KNOWLEDGE_DIR", "./knowledge_data")
+        ).resolve()
         return cls(
             backend=backend,
             api_key=api_key,
@@ -59,6 +63,7 @@ class Config:
             ollama_host=os.environ.get("STEVI_OLLAMA_HOST", DEFAULT_OLLAMA_HOST),
             ollama_model=os.environ.get("STEVI_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL),
             workspace=workspace,
+            knowledge_dir=knowledge_dir,
         )
 
     @property

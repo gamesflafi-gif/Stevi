@@ -24,7 +24,7 @@ class Agent:
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        self.knowledge = KnowledgeBase()
+        self.knowledge = KnowledgeBase(extra_dirs=[config.knowledge_dir])
         self.backend = build_backend(config)
         self.config.workspace.mkdir(parents=True, exist_ok=True)
 

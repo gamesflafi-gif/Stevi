@@ -18,6 +18,7 @@ def _config(backend: str, api_key: str | None = None) -> Config:
         ollama_host="http://localhost:11434",
         ollama_model="qwen2.5-coder:7b",
         workspace=Path("./workspace"),
+        knowledge_dir=Path("./knowledge_data"),
     )
 
 

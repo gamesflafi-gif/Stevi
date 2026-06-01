@@ -159,8 +159,35 @@ Du: Erstelle mir eine Fabric-Mod namens "Magic Wands" für Minecraft 1.21,
 | 📦 **Fabric-Mod erstellen** | Komplettes, kompilierbares Gradle-Projektgerüst anlegen |
 | 🧩 **Modpack erstellen** | Modpack-Struktur + Modrinth-Manifest (`modrinth.index.json`) anlegen |
 | ➕ **Mods verwalten** | Mods zu einem Modpack hinzufügen / auflisten |
+| 🧠 **Dazulernen** | Mod-Code & Video-Transkripte importieren (`stevi import …`) |
 
 Alle generierten Projekte landen unter `./workspace/` (konfigurierbar).
+
+---
+
+## 🧠 Stevi schlauer machen (Wissen importieren)
+
+Stevi lernt dazu, indem du echtes Material als **Text** in seine Wissensdatenbank
+lädst — **kostenlos, ohne Training**. Das importierte Wissen wird beim nächsten
+Start automatisch mitgenutzt (Suche per Stichwort, RAG).
+
+```bash
+# Echten Mod-Quellcode importieren (lokaler Ordner ODER GitHub-URL):
+python -m stevi import mod https://github.com/USER/coole-mod.git "Coole Mod"
+python -m stevi import mod ./meine-mod-quellen
+
+# Video-Transkript / Untertitel importieren (.srt, .vtt oder .txt):
+python -m stevi import transcript ./tutorial.vtt "Fabric Items Tutorial"
+
+# Anzeigen, was schon importiert wurde:
+python -m stevi import list
+```
+
+> **Warum Transkripte statt Videos?** Das wertvolle Wissen in einem Tutorial ist die
+> Erklärung und der **Code**, nicht das Bild. Untertitel (oft per Klick als `.srt`/
+> `.vtt` ladbar) liefern genau diesen Text — viel effizienter und ohne teures
+> Video-Training. YouTube-Untertitel kannst du z.B. mit Tools wie `yt-dlp` als
+> `.vtt` herunterladen und dann importieren.
 
 ---
 
@@ -190,6 +217,7 @@ Stevi/
 │   │   └── claude.py      #    Anthropic-API
 │   ├── prompts.py         # Stevis Persönlichkeit & Fachwissen-Systemprompt
 │   ├── knowledge.py       # Lädt & durchsucht die Wissensdatenbank
+│   ├── knowledge_import.py# 🧠 Mod-Code & Transkripte importieren
 │   ├── config.py          # Einstellungen (Backend, Modell, Workspace)
 │   ├── tools/
 │   │   ├── fabric_mod.py  # Fabric-Mod-Gerüst erzeugen
