@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from . import fabric_mod, modpack
+from . import analyze, build, content, fabric_mod, mixin, modpack
 
 # Signatur eines Tool-Handlers: (eingabe-dict, workspace) -> ergebnis-text
 Handler = Callable[[dict[str, Any], Path], str]
@@ -125,6 +125,137 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         ),
         "input_schema": {"type": "object", "properties": {}},
     },
+    # ---- Phase 2: Inhalte zu einer Mod hinzufügen --------------------------
+    {
+        "name": "add_item",
+        "description": (
+            "Füge einer bestehenden Fabric-Mod ein neues Item hinzu (Registrierung, "
+            "Modell, Sprach-Eintrag, Platzhalter-Textur). Die Mod muss bereits mit "
+            "create_fabric_mod existieren."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Ziel-Mod."},
+                "name": {"type": "string", "description": "Anzeigename des Items, z.B. 'Ruby'."},
+                "item_id": {
+                    "type": "string",
+                    "description": "Registry-ID (klein, optional; sonst aus Name abgeleitet).",
+                },
+            },
+            "required": ["mod", "name"],
+        },
+    },
+    {
+        "name": "add_block",
+        "description": (
+            "Füge einer bestehenden Fabric-Mod einen neuen Block hinzu (Block + "
+            "BlockItem, Blockstate, Modelle, Loot-Table, Sprach-Eintrag, Textur)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Ziel-Mod."},
+                "name": {"type": "string", "description": "Anzeigename des Blocks, z.B. 'Ruby Ore'."},
+                "block_id": {
+                    "type": "string",
+                    "description": "Registry-ID (klein, optional; sonst aus Name abgeleitet).",
+                },
+            },
+            "required": ["mod", "name"],
+        },
+    },
+    # ---- Phase 3: Bauen ----------------------------------------------------
+    {
+        "name": "build_mod",
+        "description": (
+            "Baue eine Mod mit Gradle (./gradlew build). Gibt Erfolg oder die "
+            "Fehlerausgabe zurück, damit du Fehler beheben kannst. Benötigt JDK + "
+            "Gradle/Wrapper zur Laufzeit."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der zu bauenden Mod."}
+            },
+            "required": ["mod"],
+        },
+    },
+    # ---- Phase 4: Analysieren & Umschreiben --------------------------------
+    {
+        "name": "analyze_mod",
+        "description": (
+            "Analysiere eine bestehende Mod: Metadaten, registrierte Items/Blöcke, "
+            "Dateiübersicht. Nutze dies, bevor du eine Mod umschreibst."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."}
+            },
+            "required": ["mod"],
+        },
+    },
+    {
+        "name": "read_mod_file",
+        "description": (
+            "Lies eine einzelne Datei eines Mod-Projekts (Pfad relativ zum "
+            "Projektordner), um sie zu verstehen oder vor einer Änderung anzusehen."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."},
+                "path": {
+                    "type": "string",
+                    "description": "Relativer Pfad, z.B. 'src/main/resources/fabric.mod.json'.",
+                },
+            },
+            "required": ["mod", "path"],
+        },
+    },
+    {
+        "name": "write_mod_file",
+        "description": (
+            "Schreibe/überschreibe eine Datei eines Mod-Projekts (Pfad relativ zum "
+            "Projektordner). So schreibst du bestehende Mods um. Danach build_mod."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."},
+                "path": {"type": "string", "description": "Relativer Pfad der Datei."},
+                "content": {"type": "string", "description": "Der vollständige neue Dateiinhalt."},
+            },
+            "required": ["mod", "path", "content"],
+        },
+    },
+    {
+        "name": "add_mixin",
+        "description": (
+            "Erzeuge ein Mixin-Gerüst, um in bestehenden Minecraft-Code einzugreifen, "
+            "und trage es in die mixins.json ein. Für Eingriffe ins Vanilla-Verhalten."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."},
+                "target_class": {
+                    "type": "string",
+                    "description": "Voll qualifizierte Ziel-Klasse, z.B. 'net.minecraft.client.MinecraftClient'.",
+                },
+                "mixin_name": {
+                    "type": "string",
+                    "description": "Name der Mixin-Klasse (optional; sonst abgeleitet).",
+                },
+                "side": {
+                    "type": "string",
+                    "description": "'client' (Standard) oder 'main' (gemeinsam).",
+                },
+            },
+            "required": ["mod", "target_class"],
+        },
+    },
 ]
 
 
@@ -144,6 +275,16 @@ _HANDLERS: dict[str, Handler] = {
     "create_modpack": modpack.create_modpack,
     "add_mod_to_modpack": modpack.add_mod_to_modpack,
     "list_workspace": _list_workspace,
+    # Phase 2
+    "add_item": content.add_item,
+    "add_block": content.add_block,
+    # Phase 3
+    "build_mod": build.build_mod,
+    # Phase 4
+    "analyze_mod": analyze.analyze_mod,
+    "read_mod_file": analyze.read_mod_file,
+    "write_mod_file": analyze.write_mod_file,
+    "add_mixin": mixin.add_mixin,
 }
 
 

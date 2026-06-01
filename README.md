@@ -157,6 +157,9 @@ Du: Erstelle mir eine Fabric-Mod namens "Magic Wands" für Minecraft 1.21,
 | 🌐 **Web-Terminal** | Im Browser chatten (`python -m stevi web`), server-tauglich |
 | 💬 **Beraten** | Fragen zu Minecraft, Fabric, Mixins, Modpacks beantworten |
 | 📦 **Fabric-Mod erstellen** | Komplettes, kompilierbares Gradle-Projektgerüst anlegen |
+| 🧱 **Items & Blöcke** | Items/Blöcke in eine Mod generieren (Java + JSON + Textur + Loot) |
+| 🔨 **Bauen** | Mod mit Gradle bauen, Fehler lesen und selbst nachbessern |
+| 🔍 **Analysieren & umschreiben** | Mods analysieren, Dateien lesen/schreiben, Mixins erzeugen |
 | 🧩 **Modpack erstellen** | Modpack-Struktur + Modrinth-Manifest (`modrinth.index.json`) anlegen |
 | ➕ **Mods verwalten** | Mods zu einem Modpack hinzufügen / auflisten |
 | 🧠 **Dazulernen** | Mod-Code & Video-Transkripte importieren (`stevi import …`) |
@@ -221,7 +224,12 @@ Stevi/
 │   ├── config.py          # Einstellungen (Backend, Modell, Workspace)
 │   ├── tools/
 │   │   ├── fabric_mod.py  # Fabric-Mod-Gerüst erzeugen
-│   │   └── modpack.py     # Modpack erzeugen / verwalten
+│   │   ├── modpack.py     # Modpack erzeugen / verwalten
+│   │   ├── project.py     # geteilte Projekt-Helfer (finden, Manifest, Texturen)
+│   │   ├── content.py     # Items & Blöcke generieren (Phase 2)
+│   │   ├── build.py       # Mod mit Gradle bauen (Phase 3)
+│   │   ├── analyze.py     # analysieren / Dateien lesen+schreiben (Phase 4)
+│   │   └── mixin.py       # Mixin-Gerüste erzeugen (Phase 4)
 │   └── knowledge/         # 📚 Markdown-Wissensdatenbank
 │       ├── fabric-basics.md
 │       ├── modpack-basics.md

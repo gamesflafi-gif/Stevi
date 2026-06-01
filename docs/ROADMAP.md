@@ -26,24 +26,29 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
   Video-Transkripte (als Text!) in die Wissensdatenbank auf. So lernt Stevi aus
   Tutorials — ohne die Videos pixelweise „anzuschauen" (das wäre teuer und
   schlechter). Importiertes Wissen wird automatisch mitgeladen.
-- 🔜 Kuratierte Wissensdatenbank ausbauen: Fabric-API-Referenzen, Beispiel-Snippets
-  (Item, Block, BlockEntity, Entity, Rezept, Loot-Table), häufige Crash-Ursachen.
-- 🔜 Werkzeug „Item/Block hinzufügen": erzeugt automatisch Java-Registrierung +
-  Modell-/Blockstate-/Lang-JSON + Platzhalter-Textur.
+- ✅ **Werkzeug „Item/Block hinzufügen":** `add_item` / `add_block` erzeugen
+  automatisch Java-Registrierung (regenerierte ModItems/ModBlocks), Modell-/
+  Blockstate-/Loot-/Lang-JSON, Platzhalter-Textur und klinken `initialize()` in die
+  Hauptklasse ein.
+- 🔜 Kuratierte Wissensdatenbank ausbauen: Fabric-API-Referenzen, mehr
+  Beispiel-Snippets (Entity, Rezept), häufige Crash-Ursachen.
 - 🔜 Forge/NeoForge-Unterstützung als Option.
 - 🔜 Versionsnummern automatisch von fabricmc.net beziehen (statt fester Defaults).
 
-## Phase 3 — Echtes Bauen & Selbstkorrektur
-- Werkzeug `build_mod`: führt `./gradlew build` aus und gibt das Ergebnis zurück.
-- Stevi liest Compiler-/Gradle-Fehler und behebt sie eigenständig (Schleife).
-- Gradle-Wrapper automatisch erzeugen, damit Projekte ohne lokale Gradle-Installation
-  bauen.
+## Phase 3 — Echtes Bauen & Selbstkorrektur ✅ (erledigt)
+- ✅ Werkzeug `build_mod`: führt `./gradlew build` (oder `gradle build`) aus und gibt
+  Erfolg oder die Fehlerausgabe zurück.
+- ✅ Stevi liest Compiler-/Gradle-Fehler und kann in seiner Werkzeug-Schleife
+  eigenständig nachbessern (read_mod_file → write_mod_file → build_mod).
+- 🔜 Gradle-Wrapper automatisch erzeugen (aktuell Hinweis: einmalig `gradle wrapper`).
 
-## Phase 4 — Bestehende Mods analysieren & umschreiben
-- Mod-Quellcode einlesen, Struktur verstehen, gezielt anpassen.
-- „Schreibe Mod X so um, dass …“ — z.B. Rezepte ändern, Werte balancen, Features
-  ergänzen.
-- Mixin-Generierung für Eingriffe in Vanilla-Verhalten.
+## Phase 4 — Bestehende Mods analysieren & umschreiben ✅ (erledigt)
+- ✅ `analyze_mod`: Mod-Struktur einlesen und verstehen (Metadaten, Registrierungen,
+  Dateiübersicht).
+- ✅ `read_mod_file` / `write_mod_file`: einzelne Dateien gezielt ansehen und
+  umschreiben (sicher auf das Projekt beschränkt) — „Schreibe Mod X so um, dass …".
+- ✅ `add_mixin`: Mixin-Gerüst für Eingriffe ins Vanilla-Verhalten, inkl. Eintrag in
+  die mixins.json.
 
 ## Phase 5 — Testen & Ausliefern
 - Mods/Modpacks in einer Test-Instanz automatisch starten und auf Crashes prüfen.
