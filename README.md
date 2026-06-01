@@ -32,8 +32,13 @@ besseren Weg:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **LLM-Gehirn:** Anthropic Claude Opus 4.8 — ein extrem fähiges Modell, das
-  Programmierung, Java und Minecraft-Konzepte bereits beherrscht.
+- **LLM-Gehirn (umschaltbar):** Stevi kann zwei „Gehirne" nutzen:
+  - 🆓 **Ollama (lokal/selbst-gehostet)** — ein Open-Source-Modell auf deinem
+    eigenen Server. **Kostenlos, offline, ohne API-Schlüssel.** Empfohlen, wenn du
+    keine laufenden Kosten willst.
+  - ☁️ **Claude Opus 4.8 (Anthropic-API)** — stärker, aber kostenpflichtig.
+  Welches verwendet wird, steuerst du mit `STEVI_BACKEND`. Das ganze restliche
+  Gerüst (Wissen, Werkzeuge) bleibt identisch.
 - **Wissensdatenbank (RAG):** Kuratierte Minecraft-/Fabric-Modding-Dokumentation
   unter `stevi/knowledge/`. Bei jeder Frage werden die relevanten Abschnitte
   herausgesucht und Stevi mitgegeben — so bleibt das Wissen aktuell und erweiterbar,
@@ -77,6 +82,59 @@ cp .env.example .env
 python -m stevi
 ```
 
+---
+
+## 🆓 Kostenlos & selbst-gehostet (ohne API-Kosten)
+
+Du willst **keine laufenden Kosten** und Stevi auf deinem **eigenen Server** mit
+**Web-Terminal** betreiben? So geht's:
+
+### Schritt 1 — Ollama installieren & Modell ziehen
+
+[Ollama](https://ollama.com) ist ein kostenloser Runner für lokale Modelle.
+
+```bash
+# Ollama installieren (siehe https://ollama.com), dann ein Code-Modell ziehen:
+ollama pull qwen2.5-coder:7b     # gut auf GPU mit ~8 GB; kleinere Alternative: :1.5b
+ollama serve                     # startet den lokalen Modell-Server
+```
+
+> Modell-Größe nach Hardware wählen: `:1.5b` (schwacher PC), `:7b` (GPU 8 GB),
+> `:14b`/`:32b` (mehr VRAM = schlauer). Werkzeug-Aufrufe brauchen ein
+> tools-fähiges Modell (z.B. `qwen2.5-coder`, `llama3.1`).
+
+### Schritt 2 — Stevi auf das lokale Modell stellen
+
+In `.env`:
+
+```bash
+STEVI_BACKEND=ollama
+STEVI_OLLAMA_MODEL=qwen2.5-coder:7b
+```
+
+### Schritt 3 — Web-Terminal starten
+
+```bash
+python -m stevi web                 # nur lokal:  http://127.0.0.1:8000
+python -m stevi web 0.0.0.0 8000    # im Netz/Server erreichbar
+```
+
+Öffne die Adresse im Browser und chatte mit Stevi — komplett kostenlos, ohne
+externe API. 🎉
+
+> ⚠️ **Sicherheit:** Das Web-Terminal hat keine Anmeldung. Mach es nur in einem
+> vertrauenswürdigen Netz auf, oder setze einen Reverse-Proxy mit Passwort davor,
+> wenn es öffentlich erreichbar sein soll.
+
+### Lohnt sich ein eigenes Modell „aus Videos"?
+
+Kurz: **nein.** Ein Modell von Grund auf mit Videos zu trainieren ist für
+Einzelpersonen praktisch unmöglich (Millionenkosten, riesige GPU-Cluster) und
+liefert schlechtere Ergebnisse. Das wertvolle Wissen aus Modding-Videos steckt im
+**Code** — und der ist frei als Text verfügbar. Stevi nutzt deshalb ein fertiges,
+lokales Modell + eine wachsende Wissensdatenbank (in die wir Mod-Code und sogar
+Video-**Transkripte** als Text laden können). Details: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 Beispiel-Unterhaltung:
 
 ```
@@ -95,6 +153,8 @@ Du: Erstelle mir eine Fabric-Mod namens "Magic Wands" für Minecraft 1.21,
 
 | Fähigkeit | Beschreibung |
 |-----------|--------------|
+| 🆓 **Kostenlos laufen** | Lokales Modell via Ollama — keine API-Kosten |
+| 🌐 **Web-Terminal** | Im Browser chatten (`python -m stevi web`), server-tauglich |
 | 💬 **Beraten** | Fragen zu Minecraft, Fabric, Mixins, Modpacks beantworten |
 | 📦 **Fabric-Mod erstellen** | Komplettes, kompilierbares Gradle-Projektgerüst anlegen |
 | 🧩 **Modpack erstellen** | Modpack-Struktur + Modrinth-Manifest (`modrinth.index.json`) anlegen |
@@ -121,13 +181,16 @@ Details siehe [`docs/ROADMAP.md`](docs/ROADMAP.md).
 ```
 Stevi/
 ├── stevi/
-│   ├── __main__.py        # Einstiegspunkt:  python -m stevi
+│   ├── __main__.py        # Einstiegspunkt:  python -m stevi  [web]
 │   ├── cli.py             # Chat-Oberfläche im Terminal
-│   ├── agent.py           # Der Agent: verbindet LLM + Wissen + Werkzeuge
-│   ├── llm.py             # Claude-Client (Prompt-Caching, Streaming)
+│   ├── web.py             # 🌐 Web-Chat-Terminal (Browser, server-tauglich)
+│   ├── agent.py           # Der Agent: verbindet Backend + Wissen + Werkzeuge
+│   ├── backends/          # 🔌 Umschaltbare "Gehirne"
+│   │   ├── ollama.py      #    lokal/kostenlos
+│   │   └── claude.py      #    Anthropic-API
 │   ├── prompts.py         # Stevis Persönlichkeit & Fachwissen-Systemprompt
 │   ├── knowledge.py       # Lädt & durchsucht die Wissensdatenbank
-│   ├── config.py          # Einstellungen (API-Key, Modell, Workspace)
+│   ├── config.py          # Einstellungen (Backend, Modell, Workspace)
 │   ├── tools/
 │   │   ├── fabric_mod.py  # Fabric-Mod-Gerüst erzeugen
 │   │   └── modpack.py     # Modpack erzeugen / verwalten

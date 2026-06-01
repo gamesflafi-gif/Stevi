@@ -11,15 +11,22 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
 ---
 
 ## Phase 1 — Fundament ✅ (erledigt)
-- Chat-Agent auf Basis von Claude (Opus 4.8).
+- Chat-Agent mit **umschaltbarem Backend**: lokal/kostenlos via **Ollama** oder
+  Claude-API.
+- **Web-Chat-Terminal** (`python -m stevi web`) — server-tauglich, im Browser
+  erreichbar, ohne externe API-Kosten.
 - Minecraft-/Fabric-Wissensdatenbank (RAG) — erweiterbar ohne Neutraining.
 - Werkzeuge: komplettes Fabric-Mod-Gradle-Projekt erzeugen, Modpack mit
   Modrinth-Manifest erzeugen, Mods hinzufügen, Workspace auflisten.
-- Tests für Werkzeuge und Wissenssuche.
+- Tests für Werkzeuge, Wissenssuche und Backends.
 
 ## Phase 2 — Mehr Wissen & Inhalte 🔜
 - Wissensdatenbank ausbauen: Fabric-API-Referenzen, Beispiel-Snippets (Item, Block,
   BlockEntity, Entity, Rezept, Loot-Table), häufige Crash-Ursachen.
+- **Wissen aus echten Mods & Videos (als Text!):** Werkzeug, das öffentlichen
+  Mod-Quellcode (GitHub) und **Video-Transkripte/Untertitel** einliest und in die
+  Wissensdatenbank aufnimmt. So lernt Stevi aus Tutorials — ohne die Videos
+  pixelweise „anzuschauen" (das wäre teuer und schlechter).
 - Werkzeug „Item/Block hinzufügen“: erzeugt automatisch Java-Registrierung +
   Modell-/Blockstate-/Lang-JSON + Platzhalter-Textur.
 - Forge/NeoForge-Unterstützung als Option.

@@ -58,7 +58,7 @@ def run_chat() -> int:
         f"        Was sollen wir machen?"
     )
     print(HELP)
-    print(f"{GREY}Modell: {config.model} · Workspace: {config.workspace}{RESET}\n")
+    print(f"{GREY}Modell: {config.model_label} · Workspace: {config.workspace}{RESET}\n")
 
     while True:
         try:
@@ -78,7 +78,7 @@ def run_chat() -> int:
             print(HELP)
             continue
         if cmd == "/reset":
-            agent.messages.clear()
+            agent.reset()
             print(f"{GREY}Gespräch zurückgesetzt.{RESET}")
             continue
 
@@ -92,7 +92,19 @@ def run_chat() -> int:
 
 
 def main() -> None:
-    """Einstiegspunkt für das Konsolen-Skript ``stevi``."""
+    """Einstiegspunkt für das Konsolen-Skript ``stevi``.
+
+    Unterbefehle:
+      stevi          → interaktiver Terminal-Chat
+      stevi web      → startet das Web-Chat-Terminal (Browser)
+    """
+    args = sys.argv[1:]
+    if args and args[0] == "web":
+        from .web import run_web
+
+        host = args[1] if len(args) > 1 else "127.0.0.1"
+        port = int(args[2]) if len(args) > 2 else 8000
+        raise SystemExit(run_web(host=host, port=port))
     raise SystemExit(run_chat())
 
 
