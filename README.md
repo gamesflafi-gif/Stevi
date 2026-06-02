@@ -161,7 +161,8 @@ Du: Erstelle mir eine Fabric-Mod namens "Magic Wands" für Minecraft 1.21,
 | 🔨 **Bauen** | Mod mit Gradle bauen, Fehler lesen und selbst nachbessern |
 | 🔍 **Analysieren & umschreiben** | Mods analysieren, Dateien lesen/schreiben, Mixins erzeugen |
 | 🧩 **Modpack erstellen** | Modpack-Struktur + Modrinth-Manifest (`modrinth.index.json`) anlegen |
-| ➕ **Mods verwalten** | Mods zu einem Modpack hinzufügen / auflisten |
+| 🔗 **Mods auflösen** | Mods von Modrinth automatisch holen (Download-Link + Hashes) |
+| 📤 **Exportieren** | Fertige `.mrpack`-Datei für Prism Launcher / Modrinth App |
 | 🧠 **Dazulernen** | Mod-Code & Video-Transkripte importieren (`stevi import …`) |
 
 Alle generierten Projekte landen unter `./workspace/` (konfigurierbar).
@@ -229,7 +230,8 @@ Stevi/
 │   │   ├── content.py     # Items & Blöcke generieren (Phase 2)
 │   │   ├── build.py       # Mod mit Gradle bauen (Phase 3)
 │   │   ├── analyze.py     # analysieren / Dateien lesen+schreiben (Phase 4)
-│   │   └── mixin.py       # Mixin-Gerüste erzeugen (Phase 4)
+│   │   ├── mixin.py       # Mixin-Gerüste erzeugen (Phase 4)
+│   │   └── distribute.py  # Modrinth-Auflösung + .mrpack-Export (Phase 5)
 │   └── knowledge/         # 📚 Markdown-Wissensdatenbank
 │       ├── fabric-basics.md
 │       ├── modpack-basics.md

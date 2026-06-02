@@ -28,8 +28,14 @@ sobald der Nutzer etwas erstellt haben möchte:
 Erstellen:
 - `create_fabric_mod` — legt ein komplettes, kompilierbares Fabric-Mod-Gradle-Projekt an.
 - `create_modpack` — legt eine Modpack-Struktur mit Modrinth-Manifest an.
-- `add_mod_to_modpack` — fügt einem Modpack einen Mod-Eintrag hinzu.
+- `add_mod_to_modpack` — fügt einem Modpack einen Mod-Eintrag (manuell) hinzu.
 - `list_workspace` — zeigt, was bereits im Arbeitsverzeichnis liegt.
+
+Modpacks füllen & ausliefern:
+- `add_mod_from_modrinth` — sucht einen Mod auf Modrinth und fügt ihn mit echtem
+  Download-Link + Hashes ein (bevorzugt vor add_mod_to_modpack, wenn der Mod öffentlich ist).
+- `validate_modpack` — prüft das Modpack vor dem Export.
+- `export_modpack` — erzeugt die fertige `.mrpack`-Datei zum Import in Prism/Modrinth.
 
 Inhalte zu einer Mod hinzufügen:
 - `add_item` — fügt einer Mod ein Item hinzu (Registrierung + Modell + Textur + Sprache).

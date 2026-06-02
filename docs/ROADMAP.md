@@ -50,10 +50,17 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
 - ✅ `add_mixin`: Mixin-Gerüst für Eingriffe ins Vanilla-Verhalten, inkl. Eintrag in
   die mixins.json.
 
-## Phase 5 — Testen & Ausliefern
-- Mods/Modpacks in einer Test-Instanz automatisch starten und auf Crashes prüfen.
-- Modpack-Export als fertige `.mrpack`-Datei (ZIP) zum direkten Import.
-- Mod-Suche/Resolver: Mods + Abhängigkeiten von Modrinth automatisch auflösen.
+## Phase 5 — Ausliefern & Auflösen ✅ (Kern erledigt)
+- ✅ `add_mod_from_modrinth`: Mod-Suche/Resolver — holt Mods von Modrinth mit echtem
+  Download-Link, Hashes und Dateigröße (gültiger .mrpack-Eintrag).
+- ✅ `export_modpack`: erzeugt die fertige `.mrpack`-Datei (ZIP) zum direkten Import
+  in Prism Launcher / Modrinth App (inkl. `overrides/`).
+- ✅ `validate_modpack`: prüft das Manifest vor dem Export (Loader/Version, doppelte
+  Pfade, Mods ohne Quelle).
+- 🔜 Abhängigkeiten automatisch mit auflösen (z.B. Fabric API als Dependency).
+- 🔜 Mods/Modpacks in einer echten Test-Instanz starten — braucht eine echte
+  Spielumgebung (außerhalb eines headless-Servers); `build_mod` + `validate_modpack`
+  decken die praktische „Hält alles zusammen?"-Prüfung ab.
 
 ---
 

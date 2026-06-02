@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from . import analyze, build, content, fabric_mod, mixin, modpack
+from . import analyze, build, content, distribute, fabric_mod, mixin, modpack
 
 # Signatur eines Tool-Handlers: (eingabe-dict, workspace) -> ergebnis-text
 Handler = Callable[[dict[str, Any], Path], str]
@@ -256,6 +256,56 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "required": ["mod", "target_class"],
         },
     },
+    # ---- Phase 5: Auflösen & Ausliefern ------------------------------------
+    {
+        "name": "add_mod_from_modrinth",
+        "description": (
+            "Suche einen Mod auf Modrinth und füge ihn mit echtem Download-Link, "
+            "Hashes und Dateigröße ins Modpack ein (gültiger .mrpack-Eintrag). "
+            "Loader/Minecraft-Version werden aus dem Modpack übernommen."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "modpack_name": {"type": "string", "description": "Name des Ziel-Modpacks."},
+                "mod": {"type": "string", "description": "Mod-Name oder Modrinth-Slug, z.B. 'sodium'."},
+                "minecraft_version": {
+                    "type": "string",
+                    "description": "Optional, sonst aus dem Modpack.",
+                },
+                "loader": {"type": "string", "description": "Optional, sonst aus dem Modpack."},
+            },
+            "required": ["modpack_name", "mod"],
+        },
+    },
+    {
+        "name": "export_modpack",
+        "description": (
+            "Exportiere ein Modpack als fertige .mrpack-Datei (ZIP), importierbar mit "
+            "Prism Launcher oder der Modrinth App."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Name des zu exportierenden Modpacks."}
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "validate_modpack",
+        "description": (
+            "Prüfe ein Modpack-Manifest auf Konsistenz (Loader/Version, doppelte "
+            "Pfade, Mods ohne Download-Quelle), bevor du es exportierst."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Name des Modpacks."}
+            },
+            "required": ["name"],
+        },
+    },
 ]
 
 
@@ -285,6 +335,10 @@ _HANDLERS: dict[str, Handler] = {
     "read_mod_file": analyze.read_mod_file,
     "write_mod_file": analyze.write_mod_file,
     "add_mixin": mixin.add_mixin,
+    # Phase 5
+    "add_mod_from_modrinth": distribute.add_mod_from_modrinth,
+    "export_modpack": distribute.export_modpack,
+    "validate_modpack": distribute.validate_modpack,
 }
 
 
