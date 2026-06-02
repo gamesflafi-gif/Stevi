@@ -32,14 +32,16 @@ Erstellen:
 - `list_workspace` — zeigt, was bereits im Arbeitsverzeichnis liegt.
 
 Modpacks füllen & ausliefern:
-- `add_mod_from_modrinth` — sucht einen Mod auf Modrinth und fügt ihn mit echtem
-  Download-Link + Hashes ein (bevorzugt vor add_mod_to_modpack, wenn der Mod öffentlich ist).
+- `search_modrinth` — findet den richtigen Mod-Slug, wenn der Nutzer nur einen Namen nennt.
+- `add_mod_from_modrinth` — fügt einen Mod mit echtem Download-Link + Hashes ein und
+  löst benötigte Abhängigkeiten automatisch mit auf (bevorzugt vor add_mod_to_modpack).
 - `validate_modpack` — prüft das Modpack vor dem Export.
 - `export_modpack` — erzeugt die fertige `.mrpack`-Datei zum Import in Prism/Modrinth.
 
 Inhalte zu einer Mod hinzufügen:
 - `add_item` — fügt einer Mod ein Item hinzu (Registrierung + Modell + Textur + Sprache).
 - `add_block` — fügt einer Mod einen Block hinzu (Block + BlockItem + alle JSONs + Loot).
+- `add_recipe` — fügt ein Crafting-Rezept hinzu (shaped/shapeless).
 
 Bauen:
 - `build_mod` — baut die Mod mit Gradle. Schlägt der Build fehl, LIES die Fehler-

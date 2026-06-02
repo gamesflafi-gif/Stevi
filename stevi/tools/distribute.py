@@ -58,6 +58,27 @@ def _get_version(slug: str, loader: str, mc_version: str) -> dict[str, Any] | No
     return versions[0]  # API liefert neueste zuerst
 
 
+def _get_version_by_id(version_id: str) -> dict[str, Any] | None:
+    """Holt eine bestimmte Mod-Version anhand ihrer ID."""
+    return _get_json(f"{MODRINTH_API}/version/{version_id}")
+
+
+def _make_entry(version: dict[str, Any], title: str) -> dict[str, Any] | None:
+    """Baut aus einer Modrinth-Version einen gültigen .mrpack-Datei-Eintrag."""
+    files = version.get("files") or []
+    primary = next((f for f in files if f.get("primary")), files[0] if files else None)
+    if not primary:
+        return None
+    return {
+        "_name": title,
+        "path": f"mods/{primary['filename']}",
+        "hashes": primary.get("hashes", {}),
+        "downloads": [primary["url"]],
+        "fileSize": primary.get("size", 0),
+        "env": {"client": "required", "server": "required"},
+    }
+
+
 def _loader_from_manifest(manifest: dict[str, Any]) -> str:
     for key in manifest.get("dependencies", {}):
         if key in _DEP_KEY_TO_LOADER:
@@ -100,32 +121,95 @@ def add_mod_from_modrinth(tool_input: dict[str, Any], workspace: Path) -> str:
             f"andere Minecraft-Version oder einen anderen Loader."
         )
 
-    files = version.get("files") or []
-    primary = next((f for f in files if f.get("primary")), files[0] if files else None)
-    if not primary:
+    main_entry = _make_entry(version, title)
+    if not main_entry:
         return f"Die gefundene Version von '{title}' enthält keine Datei."
 
-    entry = {
-        "_name": title,
-        "path": f"mods/{primary['filename']}",
-        "hashes": primary.get("hashes", {}),
-        "downloads": [primary["url"]],
-        "fileSize": primary.get("size", 0),
-        "env": {"client": "required", "server": "required"},
-    }
+    # Optional: benötigte Abhängigkeiten gleich mit auflösen.
+    with_deps = tool_input.get("with_dependencies", True)
+    if isinstance(with_deps, str):
+        with_deps = with_deps.strip().lower() not in ("false", "0", "nein", "no")
+
+    queue: list[dict[str, Any]] = [main_entry]
+    if with_deps:
+        for dep in version.get("dependencies") or []:
+            if dep.get("dependency_type") != "required":
+                continue
+            try:
+                if dep.get("version_id"):
+                    dep_version = _get_version_by_id(dep["version_id"])
+                elif dep.get("project_id"):
+                    dep_version = _get_version(dep["project_id"], loader, mc_version)
+                else:
+                    dep_version = None
+            except (urllib.error.URLError, json.JSONDecodeError):
+                dep_version = None
+            if not dep_version:
+                continue
+            dep_title = (dep.get("file_name") or "").removesuffix(".jar") or dep.get(
+                "project_id", "Abhängigkeit"
+            )
+            dep_entry = _make_entry(dep_version, dep_title)
+            if dep_entry:
+                queue.append(dep_entry)
 
     pack_files: list[dict[str, Any]] = manifest.setdefault("files", [])
-    if any(f.get("path") == entry["path"] for f in pack_files):
-        return f"'{title}' ({primary['filename']}) ist bereits im Modpack enthalten."
-    pack_files.append(entry)
+    existing = {f.get("path") for f in pack_files}
+    added: list[str] = []
+    for entry in queue:
+        if entry["path"] in existing:
+            continue
+        pack_files.append(entry)
+        existing.add(entry["path"])
+        added.append(entry["_name"])
+
+    if not added:
+        return f"'{title}' ist (inkl. Abhängigkeiten) bereits im Modpack enthalten."
     _write_manifest(manifest_path, manifest)
 
+    dep_note = ""
+    if len(added) > 1:
+        dep_note = "\n   • Mit aufgelöst: " + ", ".join(added[1:])
     return (
-        f"✅ '{title}' von Modrinth hinzugefügt (Version: {version.get('version_number', '?')}).\n"
-        f"   • Datei:  {primary['filename']}\n"
-        f"   • Quelle: {primary['url']}\n"
+        f"✅ '{added[0]}' von Modrinth hinzugefügt (Version: {version.get('version_number', '?')})."
+        f"{dep_note}\n"
         f"   Das Modpack enthält jetzt {len(pack_files)} Mod(s)."
     )
+
+
+def search_modrinth(tool_input: dict[str, Any], workspace: Path) -> str:
+    """Sucht Mods auf Modrinth und listet die besten Treffer auf."""
+    query = tool_input["query"].strip()
+    try:
+        limit = int(tool_input.get("limit", 5) or 5)
+    except (TypeError, ValueError):
+        limit = 5
+    limit = max(1, min(limit, 10))
+
+    facets = json.dumps([["project_type:mod"]])
+    params = urllib.parse.urlencode({"query": query, "limit": limit, "facets": facets})
+    try:
+        data = _get_json(f"{MODRINTH_API}/search?{params}")
+    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+        return f"Konnte Modrinth nicht erreichen ({exc})."
+
+    hits = data.get("hits") or []
+    if not hits:
+        return f"Auf Modrinth wurde nichts zu '{query}' gefunden."
+
+    lines = [f"🔍 Top-Treffer auf Modrinth für '{query}':"]
+    for h in hits:
+        desc = (h.get("description") or "").strip().replace("\n", " ")
+        if len(desc) > 90:
+            desc = desc[:90] + "…"
+        lines.append(
+            f"  • {h.get('title', '?')} (slug: {h.get('slug', '?')}) — "
+            f"{h.get('downloads', 0):,} Downloads\n    {desc}"
+        )
+    lines.append(
+        "Hinzufügen mit: add_mod_from_modrinth(modpack_name=…, mod='<slug>')."
+    )
+    return "\n".join(lines)
 
 
 def export_modpack(tool_input: dict[str, Any], workspace: Path) -> str:

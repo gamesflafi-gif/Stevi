@@ -165,6 +165,42 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "required": ["mod", "name"],
         },
     },
+    {
+        "name": "add_recipe",
+        "description": (
+            "Füge einer Mod ein Crafting-Rezept hinzu (shaped oder shapeless) als "
+            "data-JSON. Für 'shaped': pattern + key; für 'shapeless': ingredients."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."},
+                "type": {"type": "string", "description": "'shaped' (Standard) oder 'shapeless'."},
+                "result": {
+                    "type": "string",
+                    "description": "Ergebnis-Item-ID, z.B. 'magic_wands:magic_wand' oder 'minecraft:stick'.",
+                },
+                "count": {"type": "integer", "description": "Anzahl im Ergebnis (Standard 1)."},
+                "pattern": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Nur shaped: bis zu 3 Zeilen, z.B. [\"###\",\" # \",\" # \"].",
+                },
+                "key": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                    "description": "Nur shaped: Zeichen→Item-ID, z.B. {\"#\":\"minecraft:stick\"}.",
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Nur shapeless: Liste von Item-IDs.",
+                },
+                "recipe_id": {"type": "string", "description": "Dateiname/ID (optional)."},
+            },
+            "required": ["mod", "result"],
+        },
+    },
     # ---- Phase 3: Bauen ----------------------------------------------------
     {
         "name": "build_mod",
@@ -274,8 +310,27 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "description": "Optional, sonst aus dem Modpack.",
                 },
                 "loader": {"type": "string", "description": "Optional, sonst aus dem Modpack."},
+                "with_dependencies": {
+                    "type": "boolean",
+                    "description": "Benötigte Abhängigkeiten automatisch mit auflösen (Standard: true).",
+                },
             },
             "required": ["modpack_name", "mod"],
+        },
+    },
+    {
+        "name": "search_modrinth",
+        "description": (
+            "Suche Mods auf Modrinth und zeige die besten Treffer (Name, Slug, "
+            "Downloads). Nutze dies, um den richtigen Mod-Slug zu finden."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Suchbegriff, z.B. 'shaders' oder 'sodium'."},
+                "limit": {"type": "integer", "description": "Anzahl Treffer (1-10, Standard 5)."},
+            },
+            "required": ["query"],
         },
     },
     {
@@ -328,6 +383,7 @@ _HANDLERS: dict[str, Handler] = {
     # Phase 2
     "add_item": content.add_item,
     "add_block": content.add_block,
+    "add_recipe": content.add_recipe,
     # Phase 3
     "build_mod": build.build_mod,
     # Phase 4
@@ -337,6 +393,7 @@ _HANDLERS: dict[str, Handler] = {
     "add_mixin": mixin.add_mixin,
     # Phase 5
     "add_mod_from_modrinth": distribute.add_mod_from_modrinth,
+    "search_modrinth": distribute.search_modrinth,
     "export_modpack": distribute.export_modpack,
     "validate_modpack": distribute.validate_modpack,
 }

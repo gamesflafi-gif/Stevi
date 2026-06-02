@@ -12,6 +12,7 @@ werden — Stevi weist darauf hin.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -227,6 +228,58 @@ public class ModBlocks {{
     }}
 }}
 """
+
+
+def add_recipe(tool_input: dict[str, Any], workspace: Path) -> str:
+    """Fügt ein Crafting-Rezept (shaped/shapeless) als data-JSON hinzu."""
+    project, err = _resolve(workspace, tool_input["mod"].strip())
+    if project is None:
+        return err
+    meta = P.read_mod_meta(project)
+    mod_id = meta["mod_id"]
+
+    rtype = (tool_input.get("type") or "shaped").strip().lower()
+    result_id = tool_input["result"].strip()
+    if ":" not in result_id:
+        result_id = f"{mod_id}:{result_id}"
+    try:
+        count = max(1, int(tool_input.get("count", 1) or 1))
+    except (TypeError, ValueError):
+        count = 1
+    recipe_id = _reg_name(tool_input.get("recipe_id") or result_id.split(":")[-1])
+
+    if rtype.startswith("shapeless"):
+        ingredients = tool_input.get("ingredients") or []
+        if not ingredients:
+            return "Für ein shapeless-Rezept bitte 'ingredients' (Liste von Item-IDs) angeben."
+        data: dict[str, Any] = {
+            "type": "minecraft:crafting_shapeless",
+            "ingredients": [{"item": i} for i in ingredients],
+            "result": {"id": result_id, "count": count},
+        }
+    else:
+        pattern = tool_input.get("pattern") or []
+        key = tool_input.get("key") or {}
+        if not pattern or not key:
+            return (
+                "Für ein shaped-Rezept bitte 'pattern' (z.B. [\"###\",\" # \",\" # \"]) "
+                "und 'key' (z.B. {\"#\": \"minecraft:stick\"}) angeben."
+            )
+        data = {
+            "type": "minecraft:crafting_shaped",
+            "pattern": pattern,
+            "key": {k: {"item": v} for k, v in key.items()},
+            "result": {"id": result_id, "count": count},
+        }
+
+    out = project / f"src/main/resources/data/{mod_id}/recipe/{recipe_id}.json"
+    P.write_file(out, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    return (
+        f"✅ Rezept '{recipe_id}' ({rtype}) zur Mod '{meta['name']}' hinzugefügt.\n"
+        f"   • Ergebnis: {count}x {result_id}\n"
+        f"   • Datei: src/main/resources/data/{mod_id}/recipe/{recipe_id}.json\n"
+        f"   Hinweis: In MC 1.21+ liegt das Rezept im Ordner 'recipe' (Einzahl)."
+    )
 
 
 def _self_drop_loot(mod_id: str, reg: str) -> str:

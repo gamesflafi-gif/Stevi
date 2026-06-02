@@ -61,6 +61,62 @@ def test_add_mod_from_modrinth(tmp_path: Path, monkeypatch):
     assert entry["fileSize"] == 123456
 
 
+def test_add_mod_from_modrinth_resolves_dependencies(tmp_path: Path, monkeypatch):
+    _make_pack(tmp_path)
+
+    def fake_get_json(url: str):
+        if "/search" in url:
+            return {"hits": [{"slug": "create", "title": "Create"}]}
+        if "/version/DEPVER" in url:  # Abhängigkeit per version_id
+            return {
+                "version_number": "1.0",
+                "files": [
+                    {"primary": True, "filename": "flywheel.jar",
+                     "url": "https://cdn/flywheel.jar", "size": 10, "hashes": {}}
+                ],
+            }
+        if "/version" in url:  # Hauptmod
+            return [
+                {
+                    "version_number": "0.5",
+                    "dependencies": [
+                        {"dependency_type": "required", "version_id": "DEPVER",
+                         "file_name": "flywheel.jar"},
+                        {"dependency_type": "optional", "project_id": "ignored"},
+                    ],
+                    "files": [
+                        {"primary": True, "filename": "create.jar",
+                         "url": "https://cdn/create.jar", "size": 20, "hashes": {}}
+                    ],
+                }
+            ]
+        raise AssertionError(f"Unerwartete URL: {url}")
+
+    monkeypatch.setattr(distribute, "_get_json", fake_get_json)
+    result = execute_tool(
+        "add_mod_from_modrinth", {"modpack_name": "Mein Pack", "mod": "create"}, tmp_path
+    )
+    assert "aufgelöst" in result.lower()
+    manifest = json.loads((tmp_path / "mein-pack/modrinth.index.json").read_text())
+    paths = {f["path"] for f in manifest["files"]}
+    assert "mods/create.jar" in paths
+    assert "mods/flywheel.jar" in paths  # required-Abhängigkeit mit aufgenommen
+
+
+def test_search_modrinth(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        distribute,
+        "_get_json",
+        lambda url: {"hits": [
+            {"title": "Sodium", "slug": "sodium", "downloads": 5000000,
+             "description": "Rendering-Optimierung"},
+        ]},
+    )
+    result = execute_tool("search_modrinth", {"query": "performance"}, tmp_path)
+    assert "sodium" in result.lower()
+    assert "5,000,000" in result
+
+
 def test_add_mod_from_modrinth_not_found(tmp_path: Path, monkeypatch):
     _make_pack(tmp_path)
     monkeypatch.setattr(distribute, "_get_json", lambda url: {"hits": []})

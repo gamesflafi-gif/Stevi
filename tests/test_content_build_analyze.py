@@ -87,6 +87,59 @@ def test_add_block(tmp_path: Path):
     assert (proj / "src/main/resources/data/test_mod/loot_table/blocks/ruby_ore.json").is_file()
 
 
+def test_add_recipe_shaped(tmp_path: Path):
+    _make_mod(tmp_path)
+    execute_tool("add_item", {"mod": "test_mod", "name": "Magic Wand"}, tmp_path)
+    result = execute_tool(
+        "add_recipe",
+        {
+            "mod": "test_mod",
+            "type": "shaped",
+            "result": "magic_wand",
+            "pattern": [" D ", " S ", " S "],
+            "key": {"D": "minecraft:diamond", "S": "minecraft:stick"},
+        },
+        tmp_path,
+    )
+    assert "hinzugefügt" in result.lower()
+    recipe = json.loads(
+        (tmp_path / "test_mod/src/main/resources/data/test_mod/recipe/magic_wand.json").read_text()
+    )
+    assert recipe["type"] == "minecraft:crafting_shaped"
+    assert recipe["result"]["id"] == "test_mod:magic_wand"  # Namespace ergänzt
+    assert recipe["key"]["D"] == {"item": "minecraft:diamond"}
+
+
+def test_add_recipe_shapeless(tmp_path: Path):
+    _make_mod(tmp_path)
+    result = execute_tool(
+        "add_recipe",
+        {
+            "mod": "test_mod",
+            "type": "shapeless",
+            "result": "minecraft:torch",
+            "count": 4,
+            "ingredients": ["minecraft:coal", "minecraft:stick"],
+        },
+        tmp_path,
+    )
+    assert "hinzugefügt" in result.lower()
+    recipe = json.loads(
+        (tmp_path / "test_mod/src/main/resources/data/test_mod/recipe/torch.json").read_text()
+    )
+    assert recipe["type"] == "minecraft:crafting_shapeless"
+    assert recipe["result"]["count"] == 4
+    assert len(recipe["ingredients"]) == 2
+
+
+def test_add_recipe_missing_fields(tmp_path: Path):
+    _make_mod(tmp_path)
+    result = execute_tool(
+        "add_recipe", {"mod": "test_mod", "type": "shaped", "result": "x"}, tmp_path
+    )
+    assert "pattern" in result.lower()
+
+
 # ---------------------------------------------------------------------------
 # Phase 3 — build_mod
 # ---------------------------------------------------------------------------

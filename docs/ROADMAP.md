@@ -57,7 +57,10 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
   in Prism Launcher / Modrinth App (inkl. `overrides/`).
 - ✅ `validate_modpack`: prüft das Manifest vor dem Export (Loader/Version, doppelte
   Pfade, Mods ohne Quelle).
-- 🔜 Abhängigkeiten automatisch mit auflösen (z.B. Fabric API als Dependency).
+- ✅ `search_modrinth`: Mods auf Modrinth durchsuchen (Name → Slug).
+- ✅ Abhängigkeiten automatisch mit auflösen: `add_mod_from_modrinth` zieht benötigte
+  Dependencies (z.B. Fabric API) gleich mit.
+- ✅ `add_recipe`: Crafting-Rezepte (shaped/shapeless) generieren.
 - 🔜 Mods/Modpacks in einer echten Test-Instanz starten — braucht eine echte
   Spielumgebung (außerhalb eines headless-Servers); `build_mod` + `validate_modpack`
   decken die praktische „Hält alles zusammen?"-Prüfung ab.
