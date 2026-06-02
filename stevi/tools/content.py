@@ -45,6 +45,38 @@ def _resolve(workspace: Path, mod_identifier: str) -> tuple[Path | None, str]:
 # ---------------------------------------------------------------------------
 
 
+_RARITIES = {"common": "COMMON", "uncommon": "UNCOMMON", "rare": "RARE", "epic": "EPIC"}
+
+
+def _item_opts(tool_input: dict[str, Any]) -> dict[str, Any]:
+    """Liest optionale Item-Eigenschaften aus der Eingabe (versionsstabile Settings)."""
+    opts: dict[str, Any] = {}
+    if tool_input.get("max_count"):
+        try:
+            n = int(tool_input["max_count"])
+            if 1 <= n <= 99:
+                opts["max_count"] = n
+        except (TypeError, ValueError):
+            pass
+    if tool_input.get("fireproof"):
+        opts["fireproof"] = True
+    rarity = (tool_input.get("rarity") or "").strip().lower()
+    if rarity in _RARITIES:
+        opts["rarity"] = rarity
+    return opts
+
+
+def _settings_code(opts: dict[str, Any]) -> str:
+    chain = "new Item.Settings()"
+    if opts.get("max_count"):
+        chain += f".maxCount({opts['max_count']})"
+    if opts.get("fireproof"):
+        chain += ".fireproof()"
+    if opts.get("rarity"):
+        chain += f".rarity(Rarity.{_RARITIES[opts['rarity']]})"
+    return chain
+
+
 def add_item(tool_input: dict[str, Any], workspace: Path) -> str:
     mod_identifier = tool_input["mod"].strip()
     display = tool_input["name"].strip()
@@ -59,7 +91,8 @@ def add_item(tool_input: dict[str, Any], workspace: Path) -> str:
     content = P.load_content(project)
     if any(i["name"] == reg for i in content["items"]):
         return f"Das Item '{reg}' existiert in dieser Mod bereits."
-    content["items"].append({"name": reg, "display": display})
+    opts = _item_opts(tool_input)
+    content["items"].append({"name": reg, "display": display, "opts": opts})
     P.save_content(project, content)
 
     # ModItems-Klasse neu erzeugen.
@@ -79,8 +112,17 @@ def add_item(tool_input: dict[str, Any], workspace: Path) -> str:
     )
     injected = P.ensure_init_call(project, meta, f"{package}.content.ModItems.initialize();")
 
+    extras = []
+    if opts.get("max_count"):
+        extras.append(f"Stapelgröße {opts['max_count']}")
+    if opts.get("fireproof"):
+        extras.append("feuerfest")
+    if opts.get("rarity"):
+        extras.append(f"Seltenheit {opts['rarity']}")
+    extra_note = f" ({', '.join(extras)})" if extras else ""
+
     return (
-        f"✅ Item '{display}' (id: {mod_id}:{reg}) zur Mod '{meta['name']}' hinzugefügt.\n"
+        f"✅ Item '{display}' (id: {mod_id}:{reg}){extra_note} zur Mod '{meta['name']}' hinzugefügt.\n"
         f"   • Registrierung: content/ModItems.java (Konstante {_const(reg)})\n"
         f"   • Modell + Platzhalter-Textur + Sprach-Eintrag angelegt\n"
         f"{'   • initialize()-Aufruf in die Hauptklasse eingefügt' + chr(10) if injected else ''}"
@@ -89,14 +131,17 @@ def add_item(tool_input: dict[str, Any], workspace: Path) -> str:
     )
 
 
-def _items_class(package: str, mod_id: str, items: list[dict[str, str]]) -> str:
+def _items_class(package: str, mod_id: str, items: list[dict[str, Any]]) -> str:
     fields = "\n".join(
-        f'    public static final Item {_const(i["name"])} = register("{i["name"]}");'
+        f'    public static final Item {_const(i["name"])} = '
+        f'register("{i["name"]}", {_settings_code(i.get("opts") or {})});'
         for i in items
     )
     group_adds = "\n".join(
         f"            entries.add({_const(i['name'])});" for i in items
     )
+    needs_rarity = any((i.get("opts") or {}).get("rarity") for i in items)
+    rarity_import = "import net.minecraft.util.Rarity;\n" if needs_rarity else ""
     return f"""\
 package {package}.content;
 
@@ -106,16 +151,16 @@ import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
-
+{rarity_import}
 /** Von Stevi generiert — registriert die Items dieser Mod. */
 public class ModItems {{
     public static final String MOD_ID = "{mod_id}";
 
 {fields}
 
-    private static Item register(String name) {{
+    private static Item register(String name, Item.Settings settings) {{
         return Registry.register(
-            Registries.ITEM, Identifier.of(MOD_ID, name), new Item(new Item.Settings()));
+            Registries.ITEM, Identifier.of(MOD_ID, name), new Item(settings));
     }}
 
     public static void initialize() {{
@@ -279,6 +324,52 @@ def add_recipe(tool_input: dict[str, Any], workspace: Path) -> str:
         f"   • Ergebnis: {count}x {result_id}\n"
         f"   • Datei: src/main/resources/data/{mod_id}/recipe/{recipe_id}.json\n"
         f"   Hinweis: In MC 1.21+ liegt das Rezept im Ordner 'recipe' (Einzahl)."
+    )
+
+
+def add_tag(tool_input: dict[str, Any], workspace: Path) -> str:
+    """Fügt Einträge zu einem Block-/Item-Tag hinzu (data-JSON, mergt vorhandene).
+
+    Beispiele: Block mit der Spitzhacke abbaubar machen
+    (registry='block', tag='minecraft:mineable/pickaxe'), oder Items als Brennstoff
+    markieren.
+    """
+    project, err = _resolve(workspace, tool_input["mod"].strip())
+    if project is None:
+        return err
+
+    registry = (tool_input.get("registry") or "block").strip().lower()
+    if registry not in ("block", "item"):
+        return "registry muss 'block' oder 'item' sein."
+    tag = tool_input["tag"].strip()
+    values = tool_input.get("values") or []
+    if not values:
+        return "Bitte 'values' angeben (Liste von Block-/Item-IDs)."
+
+    # Tag-Namespace + Pfad auflösen (z.B. 'minecraft:mineable/pickaxe').
+    if ":" in tag:
+        ns, tag_path = tag.split(":", 1)
+    else:
+        ns, tag_path = "minecraft", tag
+
+    tag_file = project / f"src/main/resources/data/{ns}/tags/{registry}/{tag_path}.json"
+    data: dict[str, Any] = {"replace": False, "values": []}
+    if tag_file.is_file():
+        try:
+            data = json.loads(tag_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            pass
+    existing = list(data.get("values", []))
+    for v in values:
+        if v not in existing:
+            existing.append(v)
+    data["values"] = existing
+    P.write_file(tag_file, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+    return (
+        f"✅ Tag '{tag}' ({registry}) aktualisiert — {len(existing)} Eintrag/Einträge.\n"
+        f"   • Datei: src/main/resources/data/{ns}/tags/{registry}/{tag_path}.json\n"
+        f"   Tipp: 'minecraft:mineable/pickaxe' macht Blöcke mit der Spitzhacke abbaubar."
     )
 
 

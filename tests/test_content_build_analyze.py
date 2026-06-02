@@ -28,7 +28,7 @@ def test_add_item(tmp_path: Path):
     items_java = proj / "src/main/java/net/stevi/test_mod/content/ModItems.java"
     assert items_java.is_file()
     text = items_java.read_text(encoding="utf-8")
-    assert 'register("ruby")' in text
+    assert 'register("ruby", new Item.Settings())' in text
     assert "public static final Item RUBY" in text
 
     # Modell, Textur, Sprache, Manifest
@@ -56,7 +56,7 @@ def test_add_two_items_regenerates_class(tmp_path: Path):
     execute_tool("add_item", {"mod": "test_mod", "name": "Ruby"}, tmp_path)
     execute_tool("add_item", {"mod": "test_mod", "name": "Sapphire"}, tmp_path)
     text = (tmp_path / "test_mod/src/main/java/net/stevi/test_mod/content/ModItems.java").read_text()
-    assert 'register("ruby")' in text and 'register("sapphire")' in text
+    assert 'register("ruby"' in text and 'register("sapphire"' in text
     # initialize()-Aufruf nur EINMAL eingefügt (idempotent)
     main = (tmp_path / "test_mod/src/main/java/net/stevi/test_mod/TestModMod.java").read_text()
     assert main.count("ModItems.initialize();") == 1
@@ -85,6 +85,75 @@ def test_add_block(tmp_path: Path):
     assert (proj / "src/main/resources/assets/test_mod/blockstates/ruby_ore.json").is_file()
     assert (proj / "src/main/resources/assets/test_mod/models/block/ruby_ore.json").is_file()
     assert (proj / "src/main/resources/data/test_mod/loot_table/blocks/ruby_ore.json").is_file()
+
+
+def test_add_item_with_properties(tmp_path: Path):
+    _make_mod(tmp_path)
+    result = execute_tool(
+        "add_item",
+        {"mod": "test_mod", "name": "Star", "max_count": 16, "fireproof": True, "rarity": "epic"},
+        tmp_path,
+    )
+    assert "feuerfest" in result.lower() and "epic" in result.lower()
+    java = (tmp_path / "test_mod/src/main/java/net/stevi/test_mod/content/ModItems.java").read_text()
+    assert ".maxCount(16)" in java
+    assert ".fireproof()" in java
+    assert ".rarity(Rarity.EPIC)" in java
+    assert "import net.minecraft.util.Rarity;" in java
+
+
+def test_add_item_without_properties_has_no_rarity_import(tmp_path: Path):
+    _make_mod(tmp_path)
+    execute_tool("add_item", {"mod": "test_mod", "name": "Plain"}, tmp_path)
+    java = (tmp_path / "test_mod/src/main/java/net/stevi/test_mod/content/ModItems.java").read_text()
+    assert "import net.minecraft.util.Rarity;" not in java
+    assert 'register("plain", new Item.Settings())' in java
+
+
+def test_add_tag(tmp_path: Path):
+    _make_mod(tmp_path)
+    execute_tool("add_block", {"mod": "test_mod", "name": "Ruby Ore"}, tmp_path)
+    result = execute_tool(
+        "add_tag",
+        {
+            "mod": "test_mod",
+            "registry": "block",
+            "tag": "minecraft:mineable/pickaxe",
+            "values": ["test_mod:ruby_ore"],
+        },
+        tmp_path,
+    )
+    assert "aktualisiert" in result.lower()
+    tag_file = tmp_path / "test_mod/src/main/resources/data/minecraft/tags/block/mineable/pickaxe.json"
+    assert tag_file.is_file()
+    data = json.loads(tag_file.read_text())
+    assert data["values"] == ["test_mod:ruby_ore"]
+
+    # Erneutes Hinzufügen mergt ohne Duplikat.
+    execute_tool(
+        "add_tag",
+        {"mod": "test_mod", "tag": "minecraft:mineable/pickaxe", "values": ["test_mod:ruby_ore", "test_mod:x"]},
+        tmp_path,
+    )
+    data = json.loads(tag_file.read_text())
+    assert data["values"] == ["test_mod:ruby_ore", "test_mod:x"]
+
+
+def test_validate_mod_clean(tmp_path: Path):
+    _make_mod(tmp_path)
+    execute_tool("add_item", {"mod": "test_mod", "name": "Ruby"}, tmp_path)
+    execute_tool("add_block", {"mod": "test_mod", "name": "Ruby Ore"}, tmp_path)
+    result = execute_tool("validate_mod", {"mod": "test_mod"}, tmp_path)
+    assert "keine probleme" in result.lower()
+
+
+def test_validate_mod_detects_missing_files(tmp_path: Path):
+    _make_mod(tmp_path)
+    execute_tool("add_item", {"mod": "test_mod", "name": "Ruby"}, tmp_path)
+    # Modell löschen → Validierung muss meckern.
+    (tmp_path / "test_mod/src/main/resources/assets/test_mod/models/item/ruby.json").unlink()
+    result = execute_tool("validate_mod", {"mod": "test_mod"}, tmp_path)
+    assert "modell fehlt" in result.lower()
 
 
 def test_add_recipe_shaped(tmp_path: Path):

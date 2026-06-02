@@ -158,7 +158,8 @@ Du: Erstelle mir eine Fabric-Mod namens "Magic Wands" für Minecraft 1.21,
 | 💬 **Beraten** | Fragen zu Minecraft, Fabric, Mixins, Modpacks beantworten |
 | 📦 **Fabric-Mod erstellen** | Komplettes, kompilierbares Gradle-Projektgerüst anlegen |
 | 🧱 **Items & Blöcke** | Items/Blöcke in eine Mod generieren (Java + JSON + Textur + Loot) |
-| 📜 **Rezepte** | Crafting-Rezepte (shaped/shapeless) als data-JSON erzeugen |
+| 📜 **Rezepte & Tags** | Crafting-Rezepte + Tags (z.B. Block mit Spitzhacke abbaubar) |
+| ✅ **Prüfen** | `validate_mod` findet fehlende Modelle/Texturen/Lang/Loot vor dem Bauen |
 | 🔨 **Bauen** | Mod mit Gradle bauen, Fehler lesen und selbst nachbessern |
 | 🔍 **Analysieren & umschreiben** | Mods analysieren, Dateien lesen/schreiben, Mixins erzeugen |
 | 🧩 **Modpack erstellen** | Modpack-Struktur + Modrinth-Manifest (`modrinth.index.json`) anlegen |

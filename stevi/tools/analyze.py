@@ -8,6 +8,7 @@ Mit Lesen + Schreiben + Bauen kann Stevi bestehende Mods analysieren und umschre
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,81 @@ def analyze_mod(tool_input: dict[str, Any], workspace: Path) -> str:
         + "\n".join(f"     • {f}" for f in key_files)
         + "\n   Tipp: read_mod_file zum Ansehen, write_mod_file zum Ändern einer Datei."
     )
+
+
+def validate_mod(tool_input: dict[str, Any], workspace: Path) -> str:
+    """Prüft eine Mod auf häufige Fehlerquellen, BEVOR gebaut wird.
+
+    Findet fehlende Modelle/Texturen/Sprach-Einträge/Loot-Tables und prüft, ob die
+    in der mixins.json gelisteten Mixins als Java-Datei existieren. Pure Analyse —
+    ändert nichts.
+    """
+    project = P.find_project(workspace, tool_input["mod"].strip())
+    if project is None:
+        return f"Keine Mod '{tool_input['mod']}' im Workspace gefunden."
+
+    meta = P.read_mod_meta(project)
+    mod_id = meta["mod_id"]
+    res = project / f"src/main/resources/assets/{mod_id}"
+    data = project / f"src/main/resources/data/{mod_id}"
+    problems: list[str] = []
+
+    # Hauptklasse vorhanden?
+    main = P.java_file(project, meta["package"], meta["main_class"])
+    if not main.is_file():
+        problems.append(f"Hauptklasse fehlt: {meta['main_fqcn']}")
+
+    # Sprachdatei einlesen (für Lang-Checks).
+    lang_path = res / "lang/en_us.json"
+    lang: dict[str, str] = {}
+    if lang_path.is_file():
+        try:
+            lang = json.loads(lang_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            problems.append("lang/en_us.json ist kein gültiges JSON.")
+
+    content = P.load_content(project)
+    for item in content.get("items", []):
+        name = item["name"]
+        if not (res / f"models/item/{name}.json").is_file():
+            problems.append(f"Item '{name}': Modell fehlt (models/item/{name}.json).")
+        if not (res / f"textures/item/{name}.png").is_file():
+            problems.append(f"Item '{name}': Textur fehlt (textures/item/{name}.png).")
+        if f"item.{mod_id}.{name}" not in lang:
+            problems.append(f"Item '{name}': Sprach-Eintrag item.{mod_id}.{name} fehlt.")
+
+    for block in content.get("blocks", []):
+        name = block["name"]
+        for rel, label in [
+            (res / f"blockstates/{name}.json", "Blockstate"),
+            (res / f"models/block/{name}.json", "Block-Modell"),
+            (res / f"textures/block/{name}.png", "Textur"),
+            (data / f"loot_table/blocks/{name}.json", "Loot-Table"),
+        ]:
+            if not rel.is_file():
+                problems.append(f"Block '{name}': {label} fehlt.")
+        if f"block.{mod_id}.{name}" not in lang:
+            problems.append(f"Block '{name}': Sprach-Eintrag block.{mod_id}.{name} fehlt.")
+
+    # Mixins: gelistete Einträge müssen als .java existieren.
+    mixin_cfg = project / f"src/main/resources/{mod_id}.mixins.json"
+    if mixin_cfg.is_file():
+        try:
+            cfg = json.loads(mixin_cfg.read_text(encoding="utf-8"))
+            base = cfg.get("package", "")
+            for key in ("mixins", "client"):
+                for entry in cfg.get(key, []):
+                    fqcn = f"{base}.{entry}"
+                    pkg, cls = fqcn.rsplit(".", 1)
+                    if not P.java_file(project, pkg, cls).is_file():
+                        problems.append(f"Mixin '{entry}' in mixins.json hat keine Java-Datei.")
+        except json.JSONDecodeError:
+            problems.append(f"{mod_id}.mixins.json ist kein gültiges JSON.")
+
+    header = f"🔎 Validierung der Mod '{meta['name']}'."
+    if not problems:
+        return f"{header}\n   ✅ Keine Probleme gefunden — bereit zum Bauen (build_mod)."
+    return header + "\n" + "\n".join(f"   ❌ {p}" for p in problems)
 
 
 def read_mod_file(tool_input: dict[str, Any], workspace: Path) -> str:

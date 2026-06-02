@@ -142,6 +142,18 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "type": "string",
                     "description": "Registry-ID (klein, optional; sonst aus Name abgeleitet).",
                 },
+                "max_count": {
+                    "type": "integer",
+                    "description": "Maximale Stapelgröße 1-99 (optional, Standard 64).",
+                },
+                "fireproof": {
+                    "type": "boolean",
+                    "description": "Item verbrennt nicht im Feuer/Lava (optional).",
+                },
+                "rarity": {
+                    "type": "string",
+                    "description": "Seltenheit/Namensfarbe: common, uncommon, rare, epic (optional).",
+                },
             },
             "required": ["mod", "name"],
         },
@@ -201,6 +213,31 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "required": ["mod", "result"],
         },
     },
+    {
+        "name": "add_tag",
+        "description": (
+            "Füge Block-/Item-IDs zu einem Tag hinzu (data-JSON). Z.B. einen Block "
+            "mit 'minecraft:mineable/pickaxe' abbaubar machen oder Items als Brennstoff "
+            "markieren. Vorhandene Tag-Einträge bleiben erhalten."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."},
+                "registry": {"type": "string", "description": "'block' (Standard) oder 'item'."},
+                "tag": {
+                    "type": "string",
+                    "description": "Tag-ID, z.B. 'minecraft:mineable/pickaxe' oder 'minecraft:needs_iron_tool'.",
+                },
+                "values": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Liste der Block-/Item-IDs, z.B. ['magic_wands:ruby_ore'].",
+                },
+            },
+            "required": ["mod", "tag", "values"],
+        },
+    },
     # ---- Phase 3: Bauen ----------------------------------------------------
     {
         "name": "build_mod",
@@ -223,6 +260,20 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "description": (
             "Analysiere eine bestehende Mod: Metadaten, registrierte Items/Blöcke, "
             "Dateiübersicht. Nutze dies, bevor du eine Mod umschreibst."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mod": {"type": "string", "description": "Mod-ID oder Name der Mod."}
+            },
+            "required": ["mod"],
+        },
+    },
+    {
+        "name": "validate_mod",
+        "description": (
+            "Prüfe eine Mod auf häufige Fehler (fehlende Modelle/Texturen/Sprach-"
+            "Einträge/Loot-Tables, Mixins ohne Datei) BEVOR du baust. Reduziert Fehler."
         ),
         "input_schema": {
             "type": "object",
@@ -384,10 +435,12 @@ _HANDLERS: dict[str, Handler] = {
     "add_item": content.add_item,
     "add_block": content.add_block,
     "add_recipe": content.add_recipe,
+    "add_tag": content.add_tag,
     # Phase 3
     "build_mod": build.build_mod,
     # Phase 4
     "analyze_mod": analyze.analyze_mod,
+    "validate_mod": analyze.validate_mod,
     "read_mod_file": analyze.read_mod_file,
     "write_mod_file": analyze.write_mod_file,
     "add_mixin": mixin.add_mixin,

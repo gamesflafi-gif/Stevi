@@ -20,6 +20,14 @@ Items, Blöcke, Mechaniken und einer passenden Mod-Auswahl.
   Modrinth-Manifest erzeugen, Mods hinzufügen, Workspace auflisten.
 - Tests für Werkzeuge, Wissenssuche und Backends.
 
+## Laufende Verbesserungen (weniger Fehler, mehr Möglichkeiten) 🔄
+- ✅ `add_item` mit Eigenschaften: Stapelgröße, feuerfest, Seltenheit.
+- ✅ `add_tag`: Blöcke/Items zu Tags hinzufügen (z.B. mit Spitzhacke abbaubar).
+- ✅ `validate_mod`: findet fehlende Modelle/Texturen/Lang/Loot/Mixins vor dem Bauen.
+- ✅ CI (GitHub Actions): Testsuite läuft bei jedem Push/PR (Python 3.10–3.12).
+- ✅ Mehr Wissen: Item-Settings, Werkzeuge/Rüstung, Tags (version-bewusst).
+- 🔜 Weitere Generatoren: Werkzeuge/Rüstung/Food als eigene Werkzeuge (version-robust).
+
 ## Phase 2 — Mehr Wissen & Inhalte 🔄 (in Arbeit)
 - ✅ **Wissens-Importer:** `stevi import mod <ordner|git-url>` und
   `stevi import transcript <datei>` nehmen echten Mod-Quellcode und
