@@ -1,0 +1,21 @@
+# Geheimnisse
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Stevi-Arbeitsverzeichnis (generierte Mods/Modpacks)
+workspace/
+
+# Importiertes Wissen (Mod-Code / Transkripte) — lokal, nicht eingecheckt
+knowledge_data/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

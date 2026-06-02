@@ -1,0 +1,24 @@
+[project]
+name = "stevi"
+version = "0.1.0"
+description = "Stevi — die Minecraft-Modding-KI. Chat-Agent, der Fabric-Mods und Modpacks erstellt."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+dependencies = [
+    "anthropic>=0.40.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+stevi = "stevi.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["stevi*"]
+
+[tool.setuptools.package-data]
+stevi = ["knowledge/*.md"]
